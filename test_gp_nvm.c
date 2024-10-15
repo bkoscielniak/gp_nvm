@@ -1,69 +1,93 @@
 #include <stdio.h>
-#include <string.h>
-
+#include <stdlib.h>
+#include <assert.h>
 #include "gp_nvm.h"
 
-void test_gpNvm() {
+#define MAX_LENGTH 20
+
+typedef struct {
+    UInt8 id;
+    UInt32 options;
     UInt8 length;
-    UInt8 value[256];
+    UInt8 data[MAX_LENGTH];
+} gpTestData_t;
 
-    printf("Starting tests...\n");
+#define ATTR_ID_UINT8 1
+#define ATTR_ID_UINT32 2
+#define ATTR_ID_ARRAY 3
+#define ATTR_ID_STRUCT 4
 
-    // Test 1: Set an attribute
-    UInt8 value1[] = {1, 2, 3, 4, 5};
-    gpNvm_Result result = gpNvm_SetAttribute(1, sizeof(value1), value1);
-    if (result == GP_NVM_SUCCESS) {
-        printf("Test 1 passed: Set attribute.\n");
-    } else {
-        printf("Test 1 failed: Unable to set attribute.\n");
+void test_set_get_uint8() {
+    UInt8 value = 42;
+    UInt8 length = sizeof(value);
+    gpNvm_Result result = gpNvm_SetAttribute(ATTR_ID_UINT8, length, &value);
+    assert(result == GP_NVM_SUCCESS);
+
+    UInt8 readValue;
+    UInt8 readLength;
+    result = gpNvm_GetAttribute(ATTR_ID_UINT8, &readLength, &readValue);
+    assert(result == GP_NVM_SUCCESS);
+    assert(readValue == value);
+    printf("test_set_get_uint8 passed\n");
+}
+
+void test_set_get_uint32() {
+    UInt32 value = 123456789;
+    UInt8 length = sizeof(UInt32);  // Set correct length for UInt32 (4 bytes)
+    gpNvm_Result result = gpNvm_SetAttribute(ATTR_ID_UINT32, length, &value);
+    assert(result == GP_NVM_SUCCESS);
+
+    UInt32 readValue;
+    UInt8 readLength;
+    result = gpNvm_GetAttribute(ATTR_ID_UINT32, &readLength, &readValue);
+    assert(result == GP_NVM_SUCCESS);
+    assert(readLength == sizeof(UInt32));  // Ensure the size is correct
+    assert(readValue == value);
+    printf("test_set_get_uint32 passed\n");
+}
+
+void test_set_get_array() {
+    UInt8 array[5] = {1, 2, 3, 4, 5};
+    UInt8 length = sizeof(array);
+    gpNvm_Result result = gpNvm_SetAttribute(ATTR_ID_ARRAY, length, array);
+    assert(result == GP_NVM_SUCCESS);
+
+    UInt8 readArray[5];
+    UInt8 readLength;
+    result = gpNvm_GetAttribute(ATTR_ID_ARRAY, &readLength, readArray);
+    assert(result == GP_NVM_SUCCESS);
+    for (int i = 0; i < length; i++) {
+        assert(readArray[i] == array[i]);
     }
+    printf("test_set_get_array passed\n");
+}
 
-    // Test 2: Get the same attribute
-    result = gpNvm_GetAttribute(1, &length, value);
-    if (result == GP_NVM_SUCCESS && length == sizeof(value1) && memcmp(value, value1, length) == 0) {
-        printf("Test 2 passed: Get attribute.\n");
-    } else {
-        printf("Test 2 failed: Unable to get attribute.\n");
+void test_set_get_struct() {
+    gpTestData_t testData = {1, 42, 5, {1, 2, 3, 4, 5}};
+    UInt8 length = sizeof(testData);
+    gpNvm_Result result = gpNvm_SetAttribute(ATTR_ID_STRUCT, length, &testData);
+    assert(result == GP_NVM_SUCCESS);
+
+    gpTestData_t readData;
+    UInt8 readLength;
+    result = gpNvm_GetAttribute(ATTR_ID_STRUCT, &readLength, &readData);
+    assert(result == GP_NVM_SUCCESS);
+    assert(readData.id == testData.id);
+    assert(readData.options == testData.options);
+    assert(readData.length == testData.length);
+    for (int i = 0; i < testData.length; i++) {
+        assert(readData.data[i] == testData.data[i]);
     }
-
-    // Test 3: Update the attribute
-    UInt8 value2[] = {10, 20, 30};
-    result = gpNvm_SetAttribute(1, sizeof(value2), value2);
-    if (result == GP_NVM_SUCCESS) {
-        printf("Test 3 passed: Updated attribute.\n");
-    } else {
-        printf("Test 3 failed: Unable to update attribute.\n");
-    }
-
-    // Test 4: Get the updated attribute
-    result = gpNvm_GetAttribute(1, &length, value);
-    if (result == GP_NVM_SUCCESS && length == sizeof(value2) && memcmp(value, value2, length) == 0) {
-        printf("Test 4 passed: Get updated attribute.\n");
-    } else {
-        printf("Test 4 failed: Unable to get updated attribute.\n");
-    }
-
-    // Test 5: Set a new attribute
-    UInt8 value3[] = {100, 200};
-    result = gpNvm_SetAttribute(2, sizeof(value3), value3);
-    if (result == GP_NVM_SUCCESS) {
-        printf("Test 5 passed: Set second attribute.\n");
-    } else {
-        printf("Test 5 failed: Unable to set second attribute.\n");
-    }
-
-    // Test 6: Get the new attribute
-    result = gpNvm_GetAttribute(2, &length, value);
-    if (result == GP_NVM_SUCCESS && length == sizeof(value3) && memcmp(value, value3, length) == 0) {
-        printf("Test 6 passed: Get second attribute.\n");
-    } else {
-        printf("Test 6 failed: Unable to get second attribute.\n");
-    }
-
-    printf("Tests finished.\n");
+    printf("test_set_get_struct passed\n");
 }
 
 int main() {
-    test_gpNvm();
+    // Run tests
+    test_set_get_uint8();
+    test_set_get_uint32();
+    test_set_get_array();
+    test_set_get_struct();
+
+    printf("All tests passed!\n");
     return 0;
 }
