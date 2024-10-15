@@ -1,33 +1,3 @@
-/**
- * 
- * Data Structure:
- * NvmAttribute: Holds the attribute ID, length, and value.
- * The values are stored in an array of NvmAttribute structures in the file nvm_storage.bin.
- * 
- * gpNvm_GetAttribute:
- * Reads all attributes from the file. Searches for the requested attribute by ID.
- * If found, it copies the value to the caller's buffer and returns success.
- * 
- * gpNvm_SetAttribute:
- * Reads all attributes. Updates the existing attribute if it already exists.
- * Adds a new attribute if it does not exist.
- * 
- * Helper Functions:
- * readAllAttributes: Reads the attributes from the file into memory.
- * writeAllAttributes: Writes all attributes from memory to the file.
- * 
- * Corruption Detection:
- * The code already has a basic check for file corruption by verifying if the file size is a multiple of the NvmAttribute structure size:
- * 
- * if (fileSize % sizeof(NvmAttribute) != 0) {
- *      fclose(file);
- *      return GP_NVM_FAILURE;  // Corrupted storage
- * }
- * 
- * This can be further enhanced by adding CRC checksums or other data integrity mechanisms.
- * 
- */
-
 #include <stdio.h>
 #include <string.h>
 #include "gp_nvm.h"
