@@ -62,7 +62,7 @@ gpNvm_Result gpNvm_GetAttribute(gpNvm_AttrId attrId, UInt8* pLength, void* pValu
                 memcpy(pValue, entry.value, entry.length);
             }
             fclose(file);
-            printf("Success: Attribute %d read with length %d\n", attrId, *pLength);
+            //printf("Success: Attribute %d read with length %d\n", attrId, *pLength);
             return GP_NVM_SUCCESS;
         }
     }
@@ -120,6 +120,6 @@ gpNvm_Result gpNvm_SetAttribute(gpNvm_AttrId attrId, UInt8 length, void* pValue)
     }
 
     fclose(file);
-    printf("Success: Attribute %d written with length %d\n", attrId, entry.length);
+    //printf("Success: Attribute %d written with length %d\n", attrId, entry.length);
     return GP_NVM_SUCCESS;
 }
