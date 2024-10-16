@@ -3,15 +3,7 @@
 
 #include "gp_nvm.h"
 
-#define STORAGE_FILE "nvm_storage.bin"
 #define MAX_ATTRIBUTES 100
-
-// Struct to store each attribute in the file
-typedef struct {
-    gpNvm_AttrId id;        // The unique attribute ID
-    UInt8 length;           // The length of the stored value
-    UInt8 value[255];       // The value itself (up to 255 bytes)
-} gpNvm_Entry;
 
 // Helper function to check if the file exists
 static int file_exists(void)
@@ -24,6 +16,17 @@ static int file_exists(void)
     }
 
     return 0;
+}
+
+static UInt8 compute_checksum(const UInt8 *data, UInt8 length)
+{
+    UInt8 checksum = 0;
+
+    for (UInt8 i = 0; i < length; i++) {
+        checksum ^= data[i];
+    }
+
+    return checksum;
 }
 
 // Function to handle writing multi-byte values like UInt32 to file (Endian-agnostic)
@@ -63,6 +66,15 @@ gpNvm_Result gpNvm_GetAttribute(gpNvm_AttrId attrId, UInt8 *pLength, void *pValu
     while (fread(&entry, sizeof(gpNvm_Entry), 1, file)) {
         if (entry.id == attrId) {
             *pLength = entry.length;
+
+            UInt8 computed_checksum = compute_checksum(entry.value, entry.length);
+            //printf("Computed checksum: %u, Stored checksum: %u\n", computed_checksum, entry.checksum);
+
+            if (computed_checksum != entry.checksum) {
+                printf("Error: Data corruption detected for attribute %d\n", attrId);
+                fclose(file);
+                return GP_NVM_ERROR;
+            }
 
             // If getting a UInt32 value, ensure it is properly read
             if (entry.length == sizeof(UInt32)) {
@@ -121,6 +133,10 @@ gpNvm_Result gpNvm_SetAttribute(gpNvm_AttrId attrId, UInt8 length, void *pValue)
         entry.length = length;
         memcpy(entry.value, pValue, length);
     }
+
+    // Compute and store the checksum
+    entry.checksum = compute_checksum(entry.value, length);
+    //printf("Stored checksum: %u\n", entry.checksum);
 
     // Write the entry (overwrite if found, append if new)
     size_t result = fwrite(&entry, sizeof(gpNvm_Entry), 1, file);

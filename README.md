@@ -9,6 +9,7 @@ The implementation supports:
 - Arrays of `UInt8`.
 - Structs with arbitrary data (e.g., `gpTestData_t` struct).
 - Detection of storage corruption (through basic file operations).
+- Uses checksums to detect data corruption during retrieval.
 
 ## File Structure
 
@@ -25,6 +26,10 @@ To compile the project and run the unit tests, follow these steps:
 
 ```bash
 gcc -o test_gp_nvm test_gp_nvm.c gp_nvm.c
+```
+or use a Makefile is provided to make compilation easier. To compile the project, simply run:
+```bash
+make
 ```
 
 This will create an executable called test_gp_nvm.
@@ -44,6 +49,8 @@ test_set_get_uint8 passed
 test_set_get_uint32 passed
 test_set_get_array passed
 test_set_get_struct passed
+Error: Data corruption detected for attribute 5
+Data corruption detected as expected. Test passed!
 All tests passed!
 ```
 
@@ -90,6 +97,7 @@ typedef struct {
     gpNvm_AttrId id;        // The unique attribute ID
     UInt8 length;           // The length of the stored value
     UInt8 value[255];       // The value itself (up to 255 bytes)
+    UInt8 checksum;         // The checksum for verify the integrity
 } gpNvm_Entry;
 ```
 
@@ -108,6 +116,8 @@ Structures: Complex data types such as structs can be stored as long as the tota
 
 ## 5. Data Integrity and Corruption Handling
 In real-world embedded systems, non-volatile memory can sometimes become corrupted due to power failures or memory wear. While this implementation doesn't simulate such failures, it does include basic mechanisms for verifying the integrity of stored data. For instance, when retrieving data, the module checks that the correct attribute ID and length are found before returning the value.
+
+The module detects data corruption using a checksum mechanism. A simple XOR-based checksum is computed on the data when storing it. The checksum is re-calculated when data is retrieved. If the checksums do not match, the system reports corruption.
 
 ## 6. Extensibility
 The module has been designed with extensibility in mind:
